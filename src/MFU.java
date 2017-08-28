@@ -59,7 +59,7 @@ public class MFU {
         tScan.start();
     }
 
-    private synchronized boolean scanningPages(int pages) {
+    private boolean scanningPages(int pages) {
         if (pages == 0) return false;
         for (int i = 1; i <= pages; i++) {
             try {
@@ -72,7 +72,7 @@ public class MFU {
         return false;
     }
 
-    private synchronized boolean printingPages(int pages) {
+    private boolean printingPages(int pages) {
         if (pages == 0) return false;
         for (int i = 1; i <= pages; i++) {
             try {
