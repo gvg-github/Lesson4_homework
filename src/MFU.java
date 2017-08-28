@@ -1,10 +1,9 @@
-/**
- * Created by GVG on 27.08.2017.
- */
 public class MFU {
 
     Object scan;
     Object print;
+    private static boolean printing = false;
+    private static boolean scanning = false;
 
     MFU(Object scan, Object print) {
         this.scan = scan;
@@ -16,18 +15,21 @@ public class MFU {
         Thread tPrint = new Thread(new Runnable() {
             @Override
             public void run() {
-                synchronized (scan){
-                    scan.notifyAll();
-                }
+
                 synchronized (print) {
-                    printPages(pages);
-                    print.notifyAll();
+
                     try {
-                        print.wait();
+                        while (printing) {
+                            print.wait();
+                        }
                     } catch (InterruptedException e) {
                         e.printStackTrace();
                     }
+                    printing = true;
+
+                    printing = printingPages(pages);
                     print.notifyAll();
+
                 }
             }
         });
@@ -38,17 +40,18 @@ public class MFU {
         Thread tScan = new Thread(new Runnable() {
             @Override
             public void run() {
-                synchronized (print){
-                    print.notifyAll();
-                }
+
                 synchronized (scan) {
-                    scan.notifyAll();
-                    scanPages(pages);
-                    try {
-                        scan.wait();
-                    } catch (InterruptedException e) {
-                        e.printStackTrace();
+                    while (scanning) {
+                        try {
+                            scan.wait();
+                        } catch (InterruptedException e) {
+                            e.printStackTrace();
+                        }
                     }
+                    scanning = true;
+
+                    scanning = scanningPages(pages);
                     scan.notifyAll();
                 }
             }
@@ -56,20 +59,8 @@ public class MFU {
         tScan.start();
     }
 
-    private synchronized void printPages(int pages) {
-        if (pages == 0) return;
-        for (int i = 1; i <= pages; i++) {
-            try {
-                Thread.sleep(50);
-                System.out.println(Thread.currentThread().getName() + ". Printed " + i + " pages.");
-            } catch (InterruptedException e) {
-                e.printStackTrace();
-            }
-        }
-    }
-
-    private synchronized void scanPages(int pages) {
-        if (pages == 0) return;
+    private synchronized boolean scanningPages(int pages) {
+        if (pages == 0) return false;
         for (int i = 1; i <= pages; i++) {
             try {
                 Thread.sleep(50);
@@ -78,5 +69,20 @@ public class MFU {
                 e.printStackTrace();
             }
         }
+        return false;
     }
+
+    private synchronized boolean printingPages(int pages) {
+        if (pages == 0) return false;
+        for (int i = 1; i <= pages; i++) {
+            try {
+                Thread.sleep(50);
+                System.out.println(Thread.currentThread().getName() + ". Printed " + i + " pages.");
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+        }
+        return false;
+    }
+
 }
